@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from sqlalchemy import DateTime, ForeignKey
 from dotenv import load_dotenv
 import os
+from sqlalchemy import select
+from werkzeug.security import generate_password_hash
 
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -56,3 +58,11 @@ class Logs(Base):
     event: Mapped[str] = mapped_column(Enum("LOGIN", "LOGOUT", "CREATE_TASK", "UPDATE_TASK", "DELETE_TASK", "CHANGE_STATUS", "CHANGE_PASSWORD", name = "change_event"))
     details: Mapped[str | None] = mapped_column(String(500), nullable = True)
     timestamp: Mapped[datetime] = mapped_column(DateTime, default = lambda: datetime.now(timezone.utc), nullable = False)
+
+Base.metadata.create_all(engine)
+
+with SessionLocal() as db:
+    admin = db.execute(select(Employee).where(Employee.username == "admin")).scalar_one_or_none()
+    if admin is None:
+        db.add(Employee(firstname = "Admin", lastname = "User", username = "admin", password = generate_password_hash("admin123"), access = "Admin", email = "admin@test.com", mobile = "9999999999"))
+        db.commit()

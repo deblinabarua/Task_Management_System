@@ -5,12 +5,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
     layout = "wide"
 )
-'''
-if st.session_state.get("logged_in"):
-    redirect = st.session_state.get("last_page", "task_front.py")
-    st.switch_page(redirect)
-'''
-
 
 
 st.title("Task Management System", text_alignment = "center")
