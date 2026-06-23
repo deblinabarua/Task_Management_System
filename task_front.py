@@ -1,7 +1,5 @@
 import streamlit as st
-import re
-from werkzeug.security import generate_password_hash, check_password_hash 
-
+import requests
 
 st.set_page_config(
     initial_sidebar_state="collapsed",
