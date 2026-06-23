@@ -1,5 +1,10 @@
 import streamlit as st
 import requests
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+API_URL = os.getenv("API_URL")
 
 st.set_page_config(
     initial_sidebar_state="collapsed",
@@ -28,7 +33,7 @@ with tab2:
                 if not username or not password:
                     st.error("Please fill all fields.")
                 else:
-                    send_user = requests.post("render_link", json = {"username": username, "password": password})
+                    send_user = requests.post(f"{API_URL}/homepage", json = {"username": username, "password": password})
                     
                     if send_user.status_code == 200:
                         user = send_user.json()
@@ -36,12 +41,12 @@ with tab2:
                         st.session_state.user = user
 
                         if st.session_state.user['access'] == 'Admin':
-                            st.switch_page('pages/admin_dash')
+                            st.switch_page('pages/admin_dash.py')
                         elif st.session_state.user['access'] == 'Manager':
-                            st.switch_page('pages/manager_dash')
+                            st.switch_page('pages/manager_dash.py')
                         elif st.session_state.user['access'] == 'AssistManager':
-                            st.switch_page('pages/assist_dash')
+                            st.switch_page('pages/assist_dash.py')
                         else:
-                            st.switch_page('pages/emp_dash')
+                            st.switch_page('pages/emp_dash.py')
                     else:
                         st.error(send_user.json()["message"])
