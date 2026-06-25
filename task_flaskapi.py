@@ -48,7 +48,7 @@ def update_emp_access():
         if update_access:
             update_access.access = new_access["access"]
             db.commit()
-            return jsonify({"message": f"Access privilege updated to {new_access["access"]}"})
+            return jsonify({"message": "Access privilege updated.", "access": new_access["access"]})
         else:
             return jsonify({"message": "Employee not found"}), 404
 
