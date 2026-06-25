@@ -11,13 +11,22 @@ st.set_page_config(
     layout = "wide"
 )
 
-if ("logged_in" not in st.session_state):
+if "logged_in" not in st.session_state:
     st.switch_page("task_front.py")
 
-if "search_id" not in st.session_state:
-    st.session_state.search_id = None
+if st.session_state.user["access"] != "Admin":
+    st.switch_page("task_front.py")
 
-st.title("Admin Dashboard", text_alignment = "center")
+col1, col2 = st.columns([6,1])
+with col1:
+    st.title("Administrator Dashboard")
+with col2:
+    if st.button("Logout"):
+        st.session_state.clear()
+        st.switch_page("task_front.py")
+
+curr_user = st.session_state.user["empid"]
+
 tab1, tab2, tab3 = st.tabs(["Add Employees", "Update Access", "Disable Account"])
 
 with tab1:

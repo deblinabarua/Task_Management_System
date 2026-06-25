@@ -16,12 +16,23 @@ st.set_page_config(
     layout = "wide"
 )
 
-if ("logged_in" not in st.session_state):
+if "logged_in" not in st.session_state:
     st.switch_page("task_front.py")
+
+if st.session_state.user["access"] != "Employee":
+    st.switch_page("task_front.py")
+
+col1, col2 = st.columns([6,1])
+with col1:
+    st.title("Employee Dashboard")
+with col2:
+    if st.button("Logout"):
+        st.session_state.clear()
+        st.switch_page("task_front.py")
 
 curr_user = st.session_state.user["empid"]
 
-st.title("Employee Dashboard", text_alignment = "center")
+
 tab1, tab2 = st.tabs(["Projects", "Add Tasks"])
 
 with tab1:
