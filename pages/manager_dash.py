@@ -22,9 +22,9 @@ st.title("Manager Dashboard", text_alignment = "center")
 tab1, tab2, tab3= st.tabs(["Projects", "Add Projects", "Profile"])
 
 with tab1:
-    view_projects = requests.get(f"{API_URL}/view_projects"), json = {"empid": curr_user}
+    view_projects = requests.get(f"{API_URL}/view_projects", json = {"empid": curr_user})
     if view_projects.status_code == 200: 
-        for project in view_projects:
+        for project in view_projects.json():
             st.header(project["title"])
             st.write("Members:")
             st.write(", ".join(project["members"]))
