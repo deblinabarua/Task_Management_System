@@ -40,7 +40,10 @@ with tab2:
                         st.session_state.logged_in = True
                         st.session_state.user = user
 
-                        if st.session_state.user['access'] == 'Admin':
+                        if user["change_pass"]:
+                            st.switch_page("pages/change_pass.py")
+
+                        elif st.session_state.user['access'] == 'Admin':
                             st.switch_page('pages/admin_dash.py')
                         elif st.session_state.user['access'] == 'Manager':
                             st.switch_page('pages/manager_dash.py')

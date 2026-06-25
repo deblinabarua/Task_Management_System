@@ -16,6 +16,9 @@ st.set_page_config(
     layout = "wide"
 )
 
+if ("logged_in" not in st.session_state):
+    st.switch_page("task_front.py")
+
 curr_user = st.session_state.user["empid"]
 
 st.title("Manager Dashboard", text_alignment = "center")
@@ -59,6 +62,19 @@ with tab2:
             if create_project.status_code == 200:
                 st.success("Project Created")                     
                     
+with tab3:
+    projects = requests.post(f"{API_URL}/employee_projects", json = {"empid": curr_user}).json()
+    employees = requests.post(f"{API_URL}/employee_list").json()
 
-                    
-
+    with st.form("add_task"):
+        st.header("Add Task")
+        project = st.selectbox("Project", projects, format_func = lambda x:x["title"])
+        title = st.text_input("Task Title")
+        description = st.text_area("Description")
+        position = st.number_input("Position",min_value = 1, value = 1)
+        parent = st.text_input("Parent Task ID (optional)")
+        members = st.multiselect("Assign Employees", options = [e["empid"]for e in employees], format_func = lambda x:next(f'{e["firstname"]} {e["lastname"]}' for e in employees if e["empid"] == x))
+        submit = st.form_submit_button("Create Task")
+        if submit:
+            requests.post(f"{API_URL}/create_task", json = {"projectid": project["projectid"], "title": title, "description": description, "position": position, "parent_task": int(parent) if parent else None, "created_by": curr_user, "members": members})
+            st.success("Task added")

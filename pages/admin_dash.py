@@ -11,11 +11,14 @@ st.set_page_config(
     layout = "wide"
 )
 
+if ("logged_in" not in st.session_state):
+    st.switch_page("task_front.py")
+
 if "search_id" not in st.session_state:
     st.session_state.search_id = None
 
 st.title("Admin Dashboard", text_alignment = "center")
-tab1, tab2, tab3, tab4, tab5= st.tabs(["Add Employees", "Update Details", "Employee Logs", "Profile", "Disable Account"])
+tab1, tab2, tab3 = st.tabs(["Add Employees", "Update Access", "Disable Account"])
 
 with tab1:
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -30,6 +33,8 @@ with tab1:
             add_emp = st.form_submit_button("Add")
 
             if add_emp:
+                if not firstname or lastname or access or email or mobile:
+                    st.error("Please fill all fields.")
                 make_user = requests.post(f"{API_URL}/addemp", json = {"firstname": firstname, "lastname": lastname, "access": access, "email": email, "mobile": mobile})
                 if make_user.status_code == 200:
                     st.success(make_user.json()["message"])
@@ -66,3 +71,13 @@ with tab2:
                     else:
                         st.error(f"{make_user.status_code}")
                     
+with tab3:
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        with st.form("disable"):
+            empid = st.text_input("Employee ID")
+            disable = st.form_submit_button("Disable")
+
+            if disable:
+                disable_emp = requests.post(f"{API_URL}/disable_account", json = {"empid": empid, "changed_by": st.session_state.user["empid"]})
+                st.write(disable_emp.json()["message"])

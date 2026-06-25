@@ -1,8 +1,9 @@
 from flask import Flask, request, jsonify
-from task_database import SessionLocal, Employee, Tasks, Projects, ProjectAssignment, TaskAssignment
+from task_database import SessionLocal, Employee, Tasks, Projects, ProjectAssignment, TaskAssignment, Logs
 from werkzeug.security import generate_password_hash, check_password_hash 
 from sqlalchemy import select
 from task_function import generate_temp_pass, generate_username
+from datetime import datetime, timezone, timedelta
 
 
 app = Flask(__name__)
@@ -15,9 +16,20 @@ def login():
         password = user_data["password"]
         
         user_exist = db.execute(select(Employee).where(Employee.username == username)).scalar_one_or_none()
-        if user_exist and check_password_hash(user_exist.password, password):
-            return jsonify({"empid": user_exist.empid, "access": user_exist.access, "firstname": user_exist.firstname}), 200
-        return jsonify({"message": "Wrong username or password."}), 401
+
+        if not user_exist:
+            return jsonify({"message": "Wrong username or password."}), 401
+        if not user_exist.is_active:
+            return jsonify({"message": "Account disabled. Contact admin."}), 403
+        if not check_password_hash(user_exist.password, password):
+            return jsonify({"message": "Wrong username or password."}), 401
+        else:
+            db.add(Logs(changed_by = user_exist.empid, event = "LOGIN", details = "User logged in."))
+            days = datetime.now(timezone.utc) - user_exist.last_pass_update
+            if days >= timedelta(days = 30):
+                user_exist.change_pass = True
+            db.commit()
+            return jsonify({"empid": user_exist.empid, "access": user_exist.access, "firstname": user_exist.firstname, "change_pass": user_exist.change_pass}), 200
     
 
 @app.route("/addemp", methods = ["POST"])
@@ -44,7 +56,7 @@ def get_emp_access():
 def update_emp_access():
     with SessionLocal() as db:
         new_access = request.get_json()
-        update_access = db.execute(select(Employee).where(Employee.empid == new_access["empid"]))
+        update_access = db.execute(select(Employee).where(Employee.empid == new_access["empid"])).scalar_one_or_none()
         if update_access:
             update_access.access = new_access["access"]
             db.commit()
@@ -90,15 +102,11 @@ def create_project():
         project = Projects(title = project_details["title"], description = project_details["description"], created_by = project_details["created_by"])
         db.add(project)
         db.flush()
+
+        db.add(ProjectAssignment(projectid = project.projectid, empid = project_details["created_by"], role = "Owner"))
         for member in project_details["members"]:
             db.add(ProjectAssignment(projectid = project.projectid, empid = int(member), role = "Member"))
-        db.add(ProjectAssignment(projectid = project.projectid, empid = project_details["created_by"], role = "Owner"))
-
-        if project_details["tasks"]:
-            for i, task in enumerate(project_details["tasks"], start = 1):
-                new_task = Tasks(title = task.strip(), position = i, status = "Not started", created_by = project_details["created_by"], projectid = project.projectid)
-                db.add(new_task)
-                db.flush()
+        
         db.commit()
         return jsonify({"message": "Project created"})
     
@@ -112,11 +120,48 @@ def employee_projects():
             project_list.append({"projectid": pid, "title": title, "description": description})
         return jsonify(project_list)
     
-@app.route("/create_task", methods = ["POST"])
+@app.route("/create_task", methods=["POST"])
 def create_task():
     with SessionLocal() as db:
         new_task = request.get_json()
-        task = Tasks(projectid = new_task["projectid"], title = new_task["title"], description = new_task["description"], status = "Not started", created_by = new_task["created_by"], position = 0)
+        task = Tasks(projectid = new_task["projectid"], title = new_task["title"], description = new_task["description"], parent_task = new_task["parent_task"], position = new_task["position"], status = "Not started", created_by = new_task["created_by"])
         db.add(task)
+        db.flush()
+
+        for member in new_task["members"]:
+            db.add(TaskAssignment(taskid = task.taskid, empid = member))
+
         db.commit()
         return jsonify({"message": "Task created"})
+    
+@app.route("/change_password", methods = ["POST"])
+def change_pass():
+    with SessionLocal() as db:
+        emp = request.get_json()
+        search_emp = db.execute(select(Employee).where(Employee.empid == emp["empid"])).scalar_one_or_none()
+        if not search_emp:
+            return jsonify({"message": "Employee not found."}), 404
+        if not check_password_hash(search_emp.password, emp["old"]):
+            return jsonify({"message": "Old password is incorrect."}), 401
+        else:
+            search_emp.password = generate_password_hash(emp["new"])
+            search_emp.last_pass_update = datetime.now(timezone.utc)
+            search_emp.change_pass = False
+            db.add(Logs(changed_by = search_emp.empid, event = "CHANGE_PASSWORD", details = "Password changed."))
+            db.commit()
+            return jsonify({"message": "Password updated."}), 200
+        
+@app.route("/disable_account", methods = ["POST"])
+def disable_account():
+    with SessionLocal() as db:
+        get_emp = request.get_json()
+        emp = db.execute(select(Employee).where(Employee.empid == get_emp["empid"])).scalar_one_or_none()
+        if not emp:
+            return jsonify({"message": "Employee not found."}), 404
+        if emp.username == "admin":
+            return jsonify({"message": "Cannot disable admin."}), 400
+        
+        emp.is_active = False
+        db.add(Logs(changed_by = get_emp["changed_by"], event = "UPDATE_TASK", details = f"Disabled employee {emp.empid}"))
+        db.commit()
+        return jsonify({"message": "Account disabled."})
