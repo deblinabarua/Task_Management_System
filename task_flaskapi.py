@@ -78,14 +78,14 @@ def view_projects():
             members_list = []
             for first, last in members:
                 members_list.append(f"{first} {last}")
-            tasks = db.execute(select(Tasks).where(Tasks.projectid == project.projectid)).scalars().all()
+            tasks = db.execute(select(Tasks).where(Tasks.projectid == project.projectid).order_by(Tasks.position.is_(None), Tasks.position)).scalars().all()
             task_list = []
             for task in tasks:
-                assigned = db.execute(select(Employee.firstname, Employee.lastname).join(TaskAssignment, Employee.empid == TaskAssignment.empid).where(TaskAssignment.taskid == task.taskid).order_by(Tasks.position.is_(None), Tasks.position)).all()
+                assigned = db.execute(select(Employee.firstname, Employee.lastname).join(TaskAssignment, Employee.empid == TaskAssignment.empid).where(TaskAssignment.taskid == task.taskid)).all()
                 assigned_list = []
                 for first, last in assigned:
                     assigned_list.append(f"{first} {last}")
-                task_list.append({"task": task.title, "members": assigned_list})
+                task_list.append({"task": task.title, "parent": task.parent_task, "position": task.position, "members": assigned_list})
             project_api.append({"title": project.title, "members": members_list, "tasks": task_list})
         return jsonify(project_api)
 

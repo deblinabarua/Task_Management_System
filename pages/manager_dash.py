@@ -39,6 +39,8 @@ with tab1:
                 st.write("Tasks")
                 for task in project["tasks"]:
                     st.write(task["task"])
+                    prefix = "↳ " if task["parent"] else ""
+                    st.write(f'{prefix}{task["position"]}. {task["task"]}')
                     st.caption(", ".join(task["members"]))
     else:
         st.error("Couldn't load projects")
@@ -74,6 +76,9 @@ with tab3:
         members = st.multiselect("Assign Employees", options = [e["empid"]for e in employees], format_func = lambda x:next(f'{e["firstname"]} {e["lastname"]}' for e in employees if e["empid"] == x))
         submit = st.form_submit_button("Create Task")
         if submit:
-            requests.post(f"{API_URL}/create_task", json = {"projectid": project["projectid"], "title": title, "description": description, "position": position, "parent_task": int(parent) if parent else None, "created_by": curr_user, "members": members})
-            st.success("Task added")
-            st.rerun()
+            add = requests.post(f"{API_URL}/create_task", json = {"projectid": project["projectid"], "title": title, "description": description, "position": position, "parent_task": int(parent) if parent else None, "created_by": curr_user, "members": members})
+            if add.status_code == 200:
+                st.success("Task added")
+                st.rerun()
+            else:
+                st.error(add.json()["message"])
