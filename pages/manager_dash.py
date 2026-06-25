@@ -57,7 +57,8 @@ with tab2:
         if create:
             create_project = requests.post(f"{API_URL}/add_project", json = {"created_by": curr_user, "title": title, "description": description, "members": selected_members})
             if create_project.status_code == 200:
-                st.success("Project Created")                     
+                st.success("Project Created") 
+                st.rerun()                    
                     
 with tab3:
     projects = requests.post(f"{API_URL}/employee_projects", json = {"empid": curr_user}).json()
