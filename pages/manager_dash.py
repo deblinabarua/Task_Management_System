@@ -26,13 +26,13 @@ tab1, tab2, tab3= st.tabs(["Projects", "Add Projects", "Add Tasks"])
 
 with tab1:
     view_projects = requests.post(f"{API_URL}/view_projects", json = {"empid": curr_user})
-    
+    projects = view_projects.json()
     
     if view_projects.status_code == 200: 
-        if not view_projects.json():   #Make json in one variable otherwise it will parse twice
+        if not projects:   
             st.info("No projects.")
         else:
-            for project in view_projects.json():
+            for project in projects:
                 st.header(project["title"])
                 st.write("Members:")
                 st.write(", ".join(project["members"]))
