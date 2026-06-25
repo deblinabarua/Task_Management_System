@@ -52,13 +52,9 @@ with tab2:
         description = st.text_area("Description")
 
         selected_members = st.multiselect("Assign Members", options = [emp["empid"] for emp in employees], format_func = lambda x: next(emp["firstname"] + " " + emp["lastname"] for emp in employees if emp["empid"] == x))
-        num_tasks = st.number_input("Number of Tasks", min_value = 0, step = 1)
-        tasks = []
-        for i in range(num_tasks):
-            tasks.append(st.text_input(f"Task {i + 1}"))
         create = st.form_submit_button("Create")
         if create:
-            create_project = requests.post(f"{API_URL}/add_project", json = {"created_by": curr_user, "title": title, "description": description, "members": selected_members, "tasks": tasks})
+            create_project = requests.post(f"{API_URL}/add_project", json = {"created_by": curr_user, "title": title, "description": description, "members": selected_members})
             if create_project.status_code == 200:
                 st.success("Project Created")                     
                     
