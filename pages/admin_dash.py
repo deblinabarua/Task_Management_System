@@ -61,7 +61,7 @@ with tab2:
                     send_access = requests.post(f"{API_URL}/sendaccess", json = {"access": select_access, "empid": st.session_state.search_id["empid"]})
                     if send_access.status_code == 200:
                         st.success(send_access.json()["message"])
-                        st.write(f"Employee's access privileges has been changed to {send_access.json()["access"]}")
+                        st.write(f"Employee's access privileges has been changed to {send_access.json()['access']}")
                         del st.session_state.search_id
                     else:
                         st.error(f"{make_user.status_code}")
