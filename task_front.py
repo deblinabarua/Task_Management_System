@@ -44,9 +44,11 @@ with tab2:
                             st.switch_page('pages/admin_dash.py')
                         elif st.session_state.user['access'] == 'Manager':
                             st.switch_page('pages/manager_dash.py')
-                        elif st.session_state.user['access'] == 'AssistManager':
-                            st.switch_page('pages/assist_dash.py')
                         else:
                             st.switch_page('pages/emp_dash.py')
                     else:
-                        st.error(send_user.json()["message"])
+                        try:
+                            st.error(send_user.json()["message"])
+                        except:
+                            st.error(f"{send_user.status_code}") #remove later, render and neon sleeps so put loading later
+                            st.write(send_user.text)
