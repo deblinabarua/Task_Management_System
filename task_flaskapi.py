@@ -52,7 +52,7 @@ def update_emp_access():
         else:
             return jsonify({"message": "Employee not found"}), 404
 
-@app.route("/view_projects")
+@app.route("/view_projects", methods = ["POST"])
 def view_projects():
     with SessionLocal() as db:
         get_empid = request.get_json()
@@ -71,7 +71,7 @@ def view_projects():
                 for first, last in assigned:
                     assigned_list.append(f"{first} {last}")
                 task_list.append({"task": task.title, "members": assigned_list})
-                project_api.append({"title": project.title, "members": members_list, "tasks": task_list})
+            project_api.append({"title": project.title, "members": members_list, "tasks": task_list})
         return jsonify(project_api)
 
 @app.route("/employee_list", methods = ["POST"])

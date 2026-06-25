@@ -22,21 +22,26 @@ st.title("Manager Dashboard", text_alignment = "center")
 tab1, tab2, tab3= st.tabs(["Projects", "Add Projects", "Profile"])
 
 with tab1:
-    view_projects = requests.get(f"{API_URL}/view_projects", json = {"empid": curr_user})
+    view_projects = requests.post(f"{API_URL}/view_projects", json = {"empid": curr_user})
+    
+    
     if view_projects.status_code == 200: 
-        for project in view_projects.json():
-            st.header(project["title"])
-            st.write("Members:")
-            st.write(", ".join(project["members"]))
-            st.write("Tasks")
-            for task in project["tasks"]:
-                st.write(task["task"])
-                st.caption(", ".join(task["members"]))
+        if not view_projects.json():   #Make json in one variable otherwise it will parse twice
+            st.info("No projects.")
+        else:
+            for project in view_projects.json():
+                st.header(project["title"])
+                st.write("Members:")
+                st.write(", ".join(project["members"]))
+                st.write("Tasks")
+                for task in project["tasks"]:
+                    st.write(task["task"])
+                    st.caption(", ".join(task["members"]))
     else:
         st.error("Couldn't load projects")
 
 with tab2:
-    employees = requests.get(f"{API_URL}/employee_list").json()
+    employees = requests.post(f"{API_URL}/employee_list").json()
     with st.form("Add Project"):
         st.header("Add New Project")
         
