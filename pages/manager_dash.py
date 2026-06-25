@@ -76,3 +76,4 @@ with tab3:
         if submit:
             requests.post(f"{API_URL}/create_task", json = {"projectid": project["projectid"], "title": title, "description": description, "position": position, "parent_task": int(parent) if parent else None, "created_by": curr_user, "members": members})
             st.success("Task added")
+            st.rerun()
