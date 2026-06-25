@@ -51,7 +51,7 @@ with tab2:
         title = st.text_input("Project Title")
         description = st.text_area("Description")
 
-        available_members = [emp for emp in employeesif emp["empid"] != curr_user]
+        available_members = [emp for emp in employees if emp["empid"] != curr_user]
         selected_members = st.multiselect("Assign Members", options = [emp["empid"] for emp in available_members], format_func = lambda x: next(emp["firstname"] + " " + emp["lastname"] for emp in employees if emp["empid"] == x))
         create = st.form_submit_button("Create")
         if create:
