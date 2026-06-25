@@ -25,7 +25,10 @@ def login():
             return jsonify({"message": "Wrong username or password."}), 401
         else:
             db.add(Logs(changed_by = user_exist.empid, event = "LOGIN", details = "User logged in."))
-            days = datetime.now(timezone.utc) - user_exist.last_pass_update
+            last_update = user_exist.last_pass_update
+            if last_update.tzinfo is None:
+                last_update = last_update.replace(tzinfo = timezone.utc)
+            days = datetime.now(timezone.utc) - last_update
             if days >= timedelta(days = 30):
                 user_exist.change_pass = True
             db.commit()
