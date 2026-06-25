@@ -29,7 +29,7 @@ def add_emp():
         user_adding = Employee(firstname = new_user["firstname"], lastname = new_user["lastname"], access = new_user["access"], email = new_user["email"], mobile = new_user["mobile"], username = generate_username(new_user["firstname"], new_user["lastname"]), password = generate_password_hash(temp_pass))
         db.add(user_adding)
         db.commit()
-    return jsonify({"message": "Employee has been added", "username": user_adding.username, "temp_password": temp_pass}), 200
+        return jsonify({"message": "Employee has been added", "username": user_adding.username, "temp_password": temp_pass}), 200
 
 @app.route("/getaccess", methods = ["POST"])
 def get_emp_access():
