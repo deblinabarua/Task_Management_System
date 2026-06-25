@@ -33,7 +33,7 @@ with tab1:
             add_emp = st.form_submit_button("Add")
 
             if add_emp:
-                if not firstname or lastname or access or email or mobile:
+                if not firstname or not lastname or not access or not email or not mobile:
                     st.error("Please fill all fields.")
                 make_user = requests.post(f"{API_URL}/addemp", json = {"firstname": firstname, "lastname": lastname, "access": access, "email": email, "mobile": mobile})
                 if make_user.status_code == 200:
