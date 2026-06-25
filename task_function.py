@@ -9,7 +9,7 @@ def generate_username(firstname, lastname):
         base = (firstname.lower() + lastname[0].lower())
         counter = 2
         check_name = base
-        while db.execute(select(Employee.where(Employee.username == check_name))).scalar_one_or_none():
+        while db.execute(select(Employee).where(Employee.username == check_name))).scalar_one_or_none():
             check_name = f"{base}{counter}"
             counter += 1
     return check_name
