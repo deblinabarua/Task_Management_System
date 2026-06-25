@@ -127,6 +127,11 @@ def employee_projects():
 def create_task():
     with SessionLocal() as db:
         new_task = request.get_json()
+
+        allowed = db.execute(select(ProjectAssignment).where(ProjectAssignment.projectid == new_task["projectid"], ProjectAssignment.empid == new_task["created_by"])).scalar_one_or_none()
+        if not allowed:
+            return jsonify({"message": "You are not part of this project."}), 403
+
         task = Tasks(projectid = new_task["projectid"], title = new_task["title"], description = new_task["description"], parent_task = new_task["parent_task"], position = new_task["position"], status = "Not started", created_by = new_task["created_by"])
         db.add(task)
         db.flush()
