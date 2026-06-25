@@ -22,7 +22,7 @@ if ("logged_in" not in st.session_state):
 curr_user = st.session_state.user["empid"]
 
 st.title("Employee Dashboard", text_alignment = "center")
-tab1, tab2, tab3= st.tabs(["Projects", "Add Tasks", "Profile"])
+tab1, tab2 = st.tabs(["Projects", "Add Tasks"])
 
 with tab1:
     view_projects = requests.post(f"{API_URL}/view_projects", json = {"empid": curr_user})
