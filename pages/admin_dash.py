@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 from dotenv import load_dotenv
 import os
+from task_function import api_post
 
 load_dotenv()
 API_URL = os.getenv("API_URL")
@@ -44,7 +45,7 @@ with tab1:
             if add_emp:
                 if not firstname or not lastname or not access or not email or not mobile:
                     st.error("Please fill all fields.")
-                make_user = requests.post(f"{API_URL}/addemp", json = {"firstname": firstname, "lastname": lastname, "access": access, "email": email, "mobile": mobile})
+                make_user = api_post("/addemp", json = {"firstname": firstname, "lastname": lastname, "access": access, "email": email, "mobile": mobile})
                 if make_user.status_code == 200:
                     st.success(make_user.json()["message"])
                     st.write(f"Employee username is {make_user.json()["username"]} and the password is {make_user.json()["temp_password"]}")
@@ -60,7 +61,7 @@ with tab2:
                 empid = st.text_input("Enter employee ID: ")
                 get_emp = st.form_submit_button("Search")
                 if get_emp:
-                    get_access = requests.post(f"{API_URL}/getaccess", json = {"empid": empid})
+                    get_access = api_post("/getaccess", json = {"empid": empid})
                     if get_access.status_code == 200:
                         st.session_state.search_id = get_access.json()
                     else:
@@ -72,7 +73,7 @@ with tab2:
                 select_access = st.radio("Access privileges: ", options, index = options.index(st.session_state.search_id["access"]))
                 new_access = st.form_submit_button("Update Access")
                 if new_access:
-                    send_access = requests.post(f"{API_URL}/sendaccess", json = {"access": select_access, "empid": st.session_state.search_id["empid"]})
+                    send_access = api_post("/sendaccess", json = {"access": select_access, "empid": st.session_state.search_id["empid"]})
                     if send_access.status_code == 200:
                         st.success(send_access.json()["message"])
                         st.write(f"Employee's access privileges has been changed to {send_access.json()['access']}")
@@ -88,5 +89,5 @@ with tab3:
             disable = st.form_submit_button("Disable")
 
             if disable:
-                disable_emp = requests.post(f"{API_URL}/disable_account", json = {"empid": empid, "changed_by": st.session_state.user["empid"]})
+                disable_emp = api_post("/disable_account", json = {"empid": empid, "changed_by": st.session_state.user["empid"]})
                 st.write(disable_emp.json()["message"])

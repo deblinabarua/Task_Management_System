@@ -25,7 +25,7 @@ def generate_temp_pass():
     chars = string.ascii_letters + string.digits + "!@#$%"
     return "".join(secrets.choice(chars) for _ in range(10))
 
-def api_post(endpoint, payload, retries = 2):
+def api_post(endpoint, payload = None, retries = 2):
     for attempt in range(retries):
         try:
             with st.spinner("Starting server, please wait."):
@@ -36,5 +36,5 @@ def api_post(endpoint, payload, retries = 2):
                 st.warning("Server is waking up. Please wait.")
                 time.sleep(5)
 
-        st.error("Server is taking longer than expected. Please try again later.")
-        return None
+    st.error("Server is taking longer than expected. Please try again later.")
+    return None
