@@ -18,6 +18,9 @@ if "logged_in" not in st.session_state:
 if st.session_state.user["access"] != "Admin":
     st.switch_page("task_front.py")
 
+if "search_id" not in st.session_state:
+    st.session_state.search_id = None
+
 col1, col2 = st.columns([6,1])
 with col1:
     st.title("Administrator Dashboard")
@@ -45,7 +48,8 @@ with tab1:
             if add_emp:
                 if not firstname or not lastname or not access or not email or not mobile:
                     st.error("Please fill all fields.")
-                make_user = api_post("/addemp", json = {"firstname": firstname, "lastname": lastname, "access": access, "email": email, "mobile": mobile})
+                else:
+                    make_user = api_post("/addemp", payload = {"firstname": firstname, "lastname": lastname, "access": access, "email": email, "mobile": mobile})
                 if make_user.status_code == 200:
                     st.success(make_user.json()["message"])
                     st.write(f"Employee username is {make_user.json()["username"]} and the password is {make_user.json()["temp_password"]}")
@@ -61,11 +65,11 @@ with tab2:
                 empid = st.text_input("Enter employee ID: ")
                 get_emp = st.form_submit_button("Search")
                 if get_emp:
-                    get_access = api_post("/getaccess", json = {"empid": empid})
+                    get_access = api_post("/getaccess", payload = {"empid": empid})
                     if get_access.status_code == 200:
                         st.session_state.search_id = get_access.json()
                     else:
-                        st.error(f"{make_user.status_code}")
+                        st.error(f"{get_access.status_code}")
 
         else:
             with st.form("Update Employee Details"):
@@ -73,13 +77,14 @@ with tab2:
                 select_access = st.radio("Access privileges: ", options, index = options.index(st.session_state.search_id["access"]))
                 new_access = st.form_submit_button("Update Access")
                 if new_access:
-                    send_access = api_post("/sendaccess", json = {"access": select_access, "empid": st.session_state.search_id["empid"]})
+                    send_access = api_post("/sendaccess", payload = {"access": select_access, "empid": st.session_state.search_id["empid"]})
                     if send_access.status_code == 200:
                         st.success(send_access.json()["message"])
                         st.write(f"Employee's access privileges has been changed to {send_access.json()['access']}")
-                        del st.session_state.search_id
+                        st.session_state.search_id = None
+                        st.rerun()
                     else:
-                        st.error(f"{make_user.status_code}")
+                        st.error(f"{send_access.status_code}")
                     
 with tab3:
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -89,5 +94,5 @@ with tab3:
             disable = st.form_submit_button("Disable")
 
             if disable:
-                disable_emp = api_post("/disable_account", json = {"empid": empid, "changed_by": st.session_state.user["empid"]})
+                disable_emp = api_post("/disable_account", payload = {"empid": empid, "changed_by": st.session_state.user["empid"]})
                 st.write(disable_emp.json()["message"])
