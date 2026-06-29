@@ -7,32 +7,58 @@ from datetime import datetime, timezone, timedelta
 
 
 app = Flask(__name__)
+
 @app.route("/homepage", methods = ["POST"])
 def login():
-    
-    with SessionLocal() as db:
-        user_data = request.get_json()
-        username = user_data["username"]
-        password = user_data["password"]
-        
-        user_exist = db.execute(select(Employee).where(Employee.username == username)).scalar_one_or_none()
 
-        if not user_exist:
-            return jsonify({"message": "Wrong username or password."}), 401
-        if not user_exist.is_active:
-            return jsonify({"message": "Account disabled. Contact admin."}), 403
-        if not check_password_hash(user_exist.password, password):
-            return jsonify({"message": "Wrong username or password."}), 401
-        else:
+    db = None
+
+    try:
+        if not request.is_json:
+            return jsonify({"message": "Request must be JSON."}), 415
+        
+        with SessionLocal() as db:
+            user_data = request.get_json(silent = True)
+            if not user_data:
+                return jsonify({"message": "Invalid request."}), 400
+
+            username = user_data.get("username", "").strip()
+            password = user_data.get("password", "").strip()
+            
+            if not username or not password:
+                return jsonify({"message": "Please enter username and password."}), 400
+
+            user_exist = db.execute(select(Employee).where(Employee.username == username)).scalar_one_or_none()
+
+            if not user_exist:
+                return jsonify({"message": "Wrong username or password."}), 401
+            if not user_exist.is_active:
+                return jsonify({"message": "Account disabled. Contact admin."}), 403
+            if not check_password_hash(user_exist.password, password):
+                return jsonify({"message": "Wrong username or password."}), 401
+            
             db.add(Logs(changed_by = user_exist.empid, event = "LOGIN", details = "User logged in."))
+            
             last_update = user_exist.last_pass_update
-            if last_update.tzinfo is None:
-                last_update = last_update.replace(tzinfo = timezone.utc)
-            days = datetime.now(timezone.utc) - last_update
-            if days >= timedelta(days = 30):
+
+            if not last_update:
                 user_exist.change_pass = True
+            else:
+                if last_update.tzinfo is None:
+                    last_update = last_update.replace(tzinfo = timezone.utc)
+            
+                now = datetime.now(timezone.utc)
+                days = now - last_update
+
+                if days >= timedelta(days = 30):
+                    user_exist.change_pass = True
             db.commit()
             return jsonify({"empid": user_exist.empid, "access": user_exist.access, "firstname": user_exist.firstname, "change_pass": user_exist.change_pass}), 200
+    except Exception as e:
+        if db:
+            db.rollback()
+        print(e)
+        return jsonify({"message": "Server unavailable. Please try again later."}), 500
     
 
 @app.route("/addemp", methods = ["POST"])

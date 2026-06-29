@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 from dotenv import load_dotenv
 import os
+from task_function import api_post
 
 load_dotenv()
 API_URL = os.getenv("API_URL")
@@ -11,6 +12,16 @@ st.set_page_config(
     layout = "wide"
 )
 
+if st.session_state.get("logged_in"):
+    user = st.session_state.get("user", {})
+    access = user.get("access")
+    if access == "Admin":
+        st.switch_page("pages/admin_dash.py")
+    elif access == "Manager":
+        st.switch_page("pages/manager_dash.py")
+    else:
+        st.switch_page("pages/emp_dash.py")
+    st.stop()
 
 st.title("Task Management System", text_alignment = "center")
 tab1, tab2= st.tabs(["Homepage", "Login"])
@@ -24,8 +35,8 @@ with tab2:
     with col2:
         with st.form("Login User"):
             st.header("Log in to your Account")
-            username = st.text_input("Enter username: ")
-            password = st.text_input("Enter password: ", type = "password")
+            username = st.text_input("Enter username: ").strip()
+            password = st.text_input("Enter password: ", type = "password").strip()
 
             login = st.form_submit_button("Login")
 
@@ -33,8 +44,12 @@ with tab2:
                 if not username or not password:
                     st.error("Please fill all fields.")
                 else:
-                    send_user = requests.post(f"{API_URL}/homepage", json = {"username": username, "password": password})
+                    send_user = api_post("/homepage", payload = {"username": username, "password": password})
                     
+                    if send_user is None:
+                        st.error("Server is unreachable. Try again later.")
+                        st.stop()
+
                     if send_user.status_code == 200:
                         user = send_user.json()
                         st.session_state.logged_in = True
@@ -42,16 +57,19 @@ with tab2:
 
                         if user["change_pass"]:
                             st.switch_page("pages/change_pass.py")
-
-                        elif st.session_state.user['access'] == 'Admin':
+                            st.stop()
+                        elif user['access'] == 'Admin':
                             st.switch_page('pages/admin_dash.py')
-                        elif st.session_state.user['access'] == 'Manager':
+                            st.stop()
+                        elif user['access'] == 'Manager':
                             st.switch_page('pages/manager_dash.py')
+                            st.stop()
                         else:
                             st.switch_page('pages/emp_dash.py')
+                            st.stop()
                     else:
                         try:
                             st.error(send_user.json()["message"])
                         except:
-                            st.error(f"{send_user.status_code}") #remove later, render and neon sleeps so put loading later
-                            st.write(send_user.text)
+                            st.error("Something went wrong. Please try again later.") 
+                           
