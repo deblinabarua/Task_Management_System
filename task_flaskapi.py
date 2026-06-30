@@ -170,20 +170,40 @@ def create_task():
     
 @app.route("/change_password", methods = ["POST"])
 def change_pass():
-    with SessionLocal() as db:
-        emp = request.get_json()
-        search_emp = db.execute(select(Employee).where(Employee.empid == emp["empid"])).scalar_one_or_none()
-        if not search_emp:
-            return jsonify({"message": "Employee not found."}), 404
-        if not check_password_hash(search_emp.password, emp["old"]):
-            return jsonify({"message": "Old password is incorrect."}), 401
-        else:
+    db = None
+
+    try:
+        if not request.is_json:
+            return jsonify({"message": "Request must be JSON."}), 415
+
+        with SessionLocal() as db:
+            emp = request.get_json(silent = True)
+            if not emp:
+                return jsonify({"message": "Invalid request."}), 400
+            
+            if not emp.get("empid") or not emp.get("old") or not emp.get("new"):
+                return jsonify({"message": "Invalid request."}), 400
+
+            search_emp = db.execute(select(Employee).where(Employee.empid == emp["empid"])).scalar_one_or_none()
+            if not search_emp:
+                return jsonify({"message": "Employee not found."}), 404
+            if not check_password_hash(search_emp.password, emp["old"]):
+                return jsonify({"message": "Old password is incorrect."}), 401
+            if check_password_hash(search_emp.password, emp["new"]):
+                return jsonify({"message": "New password must be different from the old one."}), 400
+        
             search_emp.password = generate_password_hash(emp["new"])
             search_emp.last_pass_update = datetime.now(timezone.utc)
             search_emp.change_pass = False
             db.add(Logs(changed_by = search_emp.empid, event = "CHANGE_PASSWORD", details = "Password changed."))
             db.commit()
             return jsonify({"message": "Password updated."}), 200
+        
+    except Exception as e:
+        if db:
+            db.rollback()
+        print(e)
+        return jsonify({"message": "Server unavailable. Please try again later."}), 500
         
 @app.route("/disable_account", methods = ["POST"])
 def disable_account():

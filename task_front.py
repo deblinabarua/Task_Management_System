@@ -35,8 +35,8 @@ with tab2:
     with col2:
         with st.form("Login User"):
             st.header("Log in to your Account")
-            username = st.text_input("Enter username: ").strip()
-            password = st.text_input("Enter password: ", type = "password").strip()
+            username = st.text_input("Enter username:").strip()
+            password = st.text_input("Enter password:", type = "password").strip()
 
             login = st.form_submit_button("Login")
 
